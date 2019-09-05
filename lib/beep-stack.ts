@@ -5,6 +5,7 @@ import {
 } from "@aws-cdk/aws-ec2";
 import {EgressAcl} from "./egress-acl";
 import {IngressAcl} from "./ingress-acl";
+import {ApplicationAcl} from "./application-acl";
 
 export class BeepStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -26,8 +27,7 @@ export class BeepStack extends cdk.Stack {
         {
           name: 'Application',
           cidrMask: 24,
-          subnetType: SubnetType.PUBLIC,
-          reserved: true
+          subnetType: SubnetType.PRIVATE,
         },
         {
           name: 'Database',
@@ -59,6 +59,13 @@ export class BeepStack extends cdk.Stack {
       vpc: vpc,
       subnetSelection: vpc.selectSubnets({
         subnetName: 'Ingress'
+      })
+    });
+
+    new ApplicationAcl(this, 'ApplicationAcl', {
+      vpc: vpc,
+      subnetSelection: vpc.selectSubnets({
+        subnetName: 'Application'
       })
     });
   }
