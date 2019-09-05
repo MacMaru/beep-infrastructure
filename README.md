@@ -1,4 +1,4 @@
-# beep-infrastructure
+# Beep Infrastructure
 Beep infrastructure is defined and managed using the [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/home.html).
 
 ## Prerequisites
@@ -20,13 +20,16 @@ Before you deploy the updated app, evaluate the difference between the AWS CDK a
 ```
 cdk diff
 ```
+**Always consult with your local AWS specialist before deployment, if you are unsure of what you are doing.**
 
 Deploy the changes:
 ```
 cdk deploy
 ```
 
-**Always consult with your local AWS specialist if you are unsure of what you are doing.**
+## Development
+
+Use the [reference documentation](https://docs.aws.amazon.com/cdk/api/latest/) to get an understanding of the concepts.
 
 ## Debugging
 
