@@ -26,4 +26,22 @@ Deploy the changes:
 cdk deploy
 ```
 
-Always consult with your local AWS specialist if you are unsure of what you are doing.
+**Always consult with your local AWS specialist if you are unsure of what you are doing.**
+
+## Debugging
+
+In order to debug, add a Run/debug configuration in WebStorm:
+
+```
+Run > Edit Configurations...
+```
+
+Under `Javascript file` add the path to your CDK binary e.g. `~/.nvm/versions/node/v12.7.0/bin/cdk`.
+
+Under `Application parameters` add the CDK command you want to debug for, e.g. `diff`
+
+Name the command after the CDK command you want to debug e.g. `cdk diff`.
+
+If you are using a specific profile, do not forget to add the `--profile` argument with the profile name.
+
+Set a breakpoint and click debug next to the run configuration in the top right.
