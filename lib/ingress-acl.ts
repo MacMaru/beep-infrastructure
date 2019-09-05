@@ -110,8 +110,6 @@ export class IngressAcl extends cdk.Construct {
         });
 
         props.subnetSelection.subnets.forEach((subnet, index) => {
-            const cfn = subnet.node.defaultChild as CfnSubnet;
-            console.log(cfn.cidrBlock);
             new CfnSubnetNetworkAclAssociation(this, 'IngressAclAssoc' + index, {
                 networkAclId: acl.ref,
                 subnetId: subnet.subnetId,

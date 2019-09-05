@@ -138,8 +138,6 @@ export class EgressAcl extends cdk.Construct {
         });
 
         props.subnetSelection.subnets.forEach((subnet, index) => {
-            const cfn = subnet.node.defaultChild as CfnSubnet;
-            console.log(cfn.cidrBlock);
             new CfnSubnetNetworkAclAssociation(this, 'EgressAclAssoc' + index, {
                 networkAclId: egressAcl.ref,
                 subnetId: subnet.subnetId,
