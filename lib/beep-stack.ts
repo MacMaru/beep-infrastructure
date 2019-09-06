@@ -1,46 +1,45 @@
 import cdk = require('@aws-cdk/core');
-import {SubnetType, Vpc} from "@aws-cdk/aws-ec2";
+import ec2 =  require('@aws-cdk/aws-ec2');
+import ecs = require('@aws-cdk/aws-ecs');
+import ecr = require('@aws-cdk/aws-ecr');
+import ssm = require('@aws-cdk/aws-ssm');
+import iam = require('@aws-cdk/aws-iam');
 import {EgressAcl} from "./egress-acl";
 import {IngressAcl} from "./ingress-acl";
 import {ApplicationAcl} from "./application-acl";
-import {
-  Cluster,
-} from "@aws-cdk/aws-ecs";
-import {Repository} from "@aws-cdk/aws-ecr";
-const uuid = require('uuid/v4');
 
 export class BeepStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const vpc = new Vpc(this, 'Production', {
+    const vpc = new ec2.Vpc(this, 'Production', {
       cidr: '10.0.0.0/16',
       subnetConfiguration: [
         {
           name: 'Egress',
           cidrMask: 24,
-          subnetType: SubnetType.PUBLIC
+          subnetType: ec2.SubnetType.PUBLIC
         },
         {
           name: 'Ingress',
           cidrMask: 24,
-          subnetType: SubnetType.PUBLIC,
+          subnetType: ec2.SubnetType.PUBLIC,
         },
         {
           name: 'Application',
           cidrMask: 24,
-          subnetType: SubnetType.PRIVATE,
+          subnetType: ec2.SubnetType.PRIVATE,
         },
         {
           name: 'Database',
           cidrMask: 24,
-          subnetType: SubnetType.ISOLATED,
+          subnetType: ec2.SubnetType.ISOLATED,
           reserved: true
         },
         {
           name: 'Bastion',
           cidrMask: 24,
-          subnetType: SubnetType.PRIVATE,
+          subnetType: ec2.SubnetType.PRIVATE,
           reserved: true
         }
       ],
@@ -71,12 +70,12 @@ export class BeepStack extends cdk.Stack {
       })
     });
 
-    const cluster = new Cluster(this, 'EcsCluster', {
+    const cluster = new ecs.Cluster(this, 'EcsCluster', {
       vpc: vpc,
       clusterName: 'BeepProduction',
     });
 
-    const phpDev = new Repository(this, 'PhpDevRepository', {
+    const phpDev = new ecr.Repository(this, 'PhpDevRepository', {
       repositoryName: 'beep-php-dev',
       lifecycleRules: [
         {
@@ -86,7 +85,7 @@ export class BeepStack extends cdk.Stack {
       ],
     });
 
-    const phpProd = new Repository(this, 'PhpProdRepository', {
+    const phpProd = new ecr.Repository(this, 'PhpProdRepository', {
       repositoryName: 'beep-php-prod',
       lifecycleRules: [
         {
@@ -96,7 +95,7 @@ export class BeepStack extends cdk.Stack {
       ],
     });
 
-    const nginxDev = new Repository(this, 'NginxDevRepository', {
+    const nginxDev = new ecr.Repository(this, 'NginxDevRepository', {
       repositoryName: 'beep-nginx-dev',
       lifecycleRules: [
         {
@@ -106,7 +105,7 @@ export class BeepStack extends cdk.Stack {
       ],
     });
 
-    const nginxProd = new Repository(this, 'NginxProdRepository', {
+    const nginxProd = new ecr.Repository(this, 'NginxProdRepository', {
       repositoryName: 'beep-nginx-prod',
       lifecycleRules: [
         {
@@ -116,7 +115,7 @@ export class BeepStack extends cdk.Stack {
       ],
     });
 
-    const apiDev = new Repository(this, 'ApiDevRepository', {
+    const apiDev = new ecr.Repository(this, 'ApiDevRepository', {
       repositoryName: 'beep-api-dev',
       lifecycleRules: [
         {
@@ -126,7 +125,7 @@ export class BeepStack extends cdk.Stack {
       ],
     });
 
-    const apiProd = new Repository(this, 'ApiProdRepository', {
+    const apiProd = new ecr.Repository(this, 'ApiProdRepository', {
       repositoryName: 'beep-api-prod',
       lifecycleRules: [
         {
@@ -135,6 +134,9 @@ export class BeepStack extends cdk.Stack {
         }
       ],
     });
+
+
+
 
   }
 }
