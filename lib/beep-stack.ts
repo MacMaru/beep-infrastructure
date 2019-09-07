@@ -2,16 +2,16 @@ import cdk = require('@aws-cdk/core');
 import ec2 = require('@aws-cdk/aws-ec2');
 import elb = require('@aws-cdk/aws-elasticloadbalancingv2');
 import ecs = require('@aws-cdk/aws-ecs');
-import ecr = require('@aws-cdk/aws-ecr');
+import route53 = require('@aws-cdk/aws-route53');
+import certificateManager = require('@aws-cdk/aws-certificatemanager');
 import rds = require('@aws-cdk/aws-rds');
 import ssm = require('@aws-cdk/aws-ssm');
 import secretsmanager = require('@aws-cdk/aws-secretsmanager');
 import {EgressAcl} from "./egress-acl";
 import {IngressAcl} from "./ingress-acl";
 import {ApplicationAcl} from "./application-acl";
-import {StorageType} from "@aws-cdk/aws-rds";
-import {RemovalPolicy} from "@aws-cdk/core";
-import {ApplicationProtocol, IpAddressType, SslPolicy} from "@aws-cdk/aws-elasticloadbalancingv2";
+import {NginxCiPipeline} from "./nginx-ci-pipeline";
+import {PhpCiPipeline} from "./php-ci-pipeline";
 
 export class BeepStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -39,6 +39,11 @@ export class BeepStack extends cdk.Stack {
           name: 'Database',
           cidrMask: 24,
           subnetType: ec2.SubnetType.ISOLATED,
+        },
+        {
+          name: 'Codebuild',
+          cidrMask: 24,
+          subnetType: ec2.SubnetType.PRIVATE,
         },
         {
           name: 'Bastion',
@@ -74,6 +79,9 @@ export class BeepStack extends cdk.Stack {
       })
     });
 
+    new NginxCiPipeline(this, 'NginxCiPipeline');
+    new PhpCiPipeline(this, 'PhpCiPipeline');
+
     const loadBalancerSecurityGroup = new ec2.SecurityGroup(this, 'ApiLoadBalancerSecurityGroup', {
       vpc,
       description: 'Elb security group',
@@ -89,19 +97,19 @@ export class BeepStack extends cdk.Stack {
       http2Enabled: false,
       loadBalancerName: 'beep-api',
       idleTimeout: cdk.Duration.seconds(20),
-      ipAddressType: IpAddressType.IPV4,
+      ipAddressType: elb.IpAddressType.IPV4,
       securityGroup: loadBalancerSecurityGroup
     });
 
-    // const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
-    //   domainName: 'stichtingbeep.nl',
-    //   privateZone: false
-    // });
-    //
-    // const certificate = new certificateManager.DnsValidatedCertificate(this, 'Certificate', {
-    //   domainName: 'api.stichtingbeep.nl',
-    //   hostedZone
-    // });
+    const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
+      domainName: 'stichtingbeep.nl',
+      privateZone: false
+    });
+
+    const certificate = new certificateManager.DnsValidatedCertificate(this, 'Certificate', {
+      domainName: 'api.stichtingbeep.nl',
+      hostedZone
+    });
 
     // We need to insert a redirect action here later, but CDK does not support this yet due to a bug:
     // https://github.com/aws/aws-cdk/issues/2563
@@ -137,7 +145,7 @@ export class BeepStack extends cdk.Stack {
       deletionProtection: true,
       masterUsername: dbMasterCredentials.secretValueFromJson('username').toString(),
       masterUserPassword: dbMasterCredentials.secretValueFromJson('password'),
-      storageType: StorageType.GP2,
+      storageType: rds.StorageType.GP2,
       storageEncrypted: false,
       allocatedStorage: 20,
       enablePerformanceInsights: false,
@@ -146,7 +154,7 @@ export class BeepStack extends cdk.Stack {
       backupRetention: cdk.Duration.days(30),
       preferredMaintenanceWindow: 'Sun:02:00-Sun:03:00',
       autoMinorVersionUpgrade: true,
-      removalPolicy: RemovalPolicy.DESTROY,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
     const databaseEndpoint = new ssm.StringParameter(this, 'DatabaseEndpoint', {
@@ -160,72 +168,10 @@ export class BeepStack extends cdk.Stack {
       target: database
     });
 
-    const phpDev = new ecr.Repository(this, 'PhpDevRepository', {
-      repositoryName: 'beep-php-dev',
-      lifecycleRules: [
-        {
-          description: 'Retain only the last 10 images',
-          maxImageCount: 10
-        }
-      ],
-    });
-
-    const phpProd = new ecr.Repository(this, 'PhpProdRepository', {
-      repositoryName: 'beep-php-prod',
-      lifecycleRules: [
-        {
-          description: 'Retain only the last 10 images',
-          maxImageCount: 10
-        }
-      ],
-    });
-
-    const nginxDev = new ecr.Repository(this, 'NginxDevRepository', {
-      repositoryName: 'beep-nginx-dev',
-      lifecycleRules: [
-        {
-          description: 'Retain only the last 10 images',
-          maxImageCount: 10
-        }
-      ],
-    });
-
-    const nginxProd = new ecr.Repository(this, 'NginxProdRepository', {
-      repositoryName: 'beep-nginx-prod',
-      lifecycleRules: [
-        {
-          description: 'Retain only the last 10 images',
-          maxImageCount: 10
-        }
-      ],
-    });
-
-    const apiDev = new ecr.Repository(this, 'ApiDevRepository', {
-      repositoryName: 'beep-api-dev',
-      lifecycleRules: [
-        {
-          description: 'Retain only the last 10 images',
-          maxImageCount: 10
-        }
-      ],
-    });
-
-    const apiProd = new ecr.Repository(this, 'ApiProdRepository', {
-      repositoryName: 'beep-api-prod',
-      lifecycleRules: [
-        {
-          description: 'Retain only the last 10 images',
-          maxImageCount: 10
-        }
-      ],
-    });
-
     const ecsCluster = new ecs.Cluster(this, 'EcsCluster', {
       vpc: vpc,
       clusterName: 'BeepProduction',
     });
-
-
 
 
 
