@@ -3,7 +3,6 @@ import ecr = require('@aws-cdk/aws-ecr');
 import codePipeline = require('@aws-cdk/aws-codepipeline');
 import codePipelineActions = require('@aws-cdk/aws-codepipeline-actions');
 import codeBuild = require('@aws-cdk/aws-codebuild');
-import {SelectedSubnets, Vpc} from "@aws-cdk/aws-ec2";
 
 export interface ApiCdPipelineProps {
   phpProductionRepository: ecr.Repository,

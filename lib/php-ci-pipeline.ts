@@ -50,7 +50,6 @@ export class PhpCiPipeline extends cdk.Construct {
         }
       },
     });
-
     phpDevRepository.grantPullPush(buildPhpDevelopmentImage);
 
     const phpProdRepository = new ecr.Repository(this, 'PhpProdRepository', {
