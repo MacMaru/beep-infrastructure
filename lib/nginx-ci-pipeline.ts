@@ -5,6 +5,9 @@ import codePipelineActions = require('@aws-cdk/aws-codepipeline-actions');
 import codeBuild = require('@aws-cdk/aws-codebuild');
 
 export class NginxCiPipeline extends cdk.Construct {
+  readonly developmentRepository: ecr.Repository;
+  readonly productionRepository: ecr.Repository;
+
   constructor(scope: cdk.Construct, id: string) {
     super(scope, id);
 
@@ -18,6 +21,7 @@ export class NginxCiPipeline extends cdk.Construct {
       ],
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
+    this.developmentRepository = nginxDevRepository;
 
     const buildNginxDevelopmentImage = new codeBuild.PipelineProject(this, 'BuildNginxDevelopmentImage', {
       projectName: 'beep-build-nginx-development-image',
@@ -43,8 +47,19 @@ export class NginxCiPipeline extends cdk.Construct {
         }
       },
     });
-
     nginxDevRepository.grantPullPush(buildNginxDevelopmentImage);
+
+    const nginxProdRepository = new ecr.Repository(this, 'NginxProdRepository', {
+      repositoryName: 'beep-nginx-prod',
+      lifecycleRules: [
+        {
+          description: 'Retain only the last 10 images',
+          maxImageCount: 10
+        }
+      ],
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+    this.productionRepository = nginxProdRepository;
 
     const nginxPipeline = new codePipeline.Pipeline(this, 'NginxPipeline', {
       pipelineName: 'Nginx',

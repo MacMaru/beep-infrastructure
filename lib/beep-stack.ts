@@ -85,6 +85,7 @@ export class BeepStack extends cdk.Stack {
     const apiPipeline = new ApiCdPipeline(this, 'ApiCdPipeline', {
       phpDevelopmentRepository: phpPipeline.developmentRepository,
       phpProductionRepository: phpPipeline.productionRepository,
+      nginxProdRepository: nginxPipeline.productionRepository,
     });
 
     const loadBalancerSecurityGroup = new ec2.SecurityGroup(this, 'ApiLoadBalancerSecurityGroup', {

@@ -8,11 +8,17 @@ import {SelectedSubnets, Vpc} from "@aws-cdk/aws-ec2";
 export interface ApiCdPipelineProps {
   phpProductionRepository: ecr.Repository,
   phpDevelopmentRepository: ecr.Repository,
+  nginxProdRepository: ecr.Repository,
 }
 
 export class ApiCdPipeline extends cdk.Construct {
+  readonly testRepository: ecr.Repository;
+  readonly productionRepository: ecr.Repository;
+
   constructor(scope: cdk.Construct, id: string, props: ApiCdPipelineProps) {
     super(scope, id);
+
+    /* Define repositories */
 
     const apiTestRepository = new ecr.Repository(this, 'ApiTestRepository', {
       repositoryName: 'beep-api-test',
@@ -24,6 +30,21 @@ export class ApiCdPipeline extends cdk.Construct {
       ],
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
+    this.testRepository = apiTestRepository;
+
+    const apiProdRepository = new ecr.Repository(this, 'ApiProdRepository', {
+      repositoryName: 'beep-api-prod',
+      lifecycleRules: [
+        {
+          description: 'Retain only the last 10 images',
+          maxImageCount: 10
+        }
+      ],
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+    this.productionRepository = apiProdRepository;
+
+    /* Define build steps */
 
     const buildApiTestImage = new codeBuild.PipelineProject(this, 'BuildApiTestImage', {
       projectName: 'beep-build-api-test-image',
@@ -49,21 +70,9 @@ export class ApiCdPipeline extends cdk.Construct {
         }
       },
     });
-
     apiTestRepository.grantPullPush(buildApiTestImage);
     props.phpDevelopmentRepository.grantPullPush(buildApiTestImage);
     props.phpProductionRepository.grantPullPush(buildApiTestImage);
-
-    const apiProdRepository = new ecr.Repository(this, 'ApiProdRepository', {
-      repositoryName: 'beep-api-prod',
-      lifecycleRules: [
-        {
-          description: 'Retain only the last 10 images',
-          maxImageCount: 10
-        }
-      ],
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
 
     const buildApiProductionImage = new codeBuild.PipelineProject(this, 'BuildApiProductionImage', {
       projectName: 'beep-build-api-production-image',
@@ -84,26 +93,14 @@ export class ApiCdPipeline extends cdk.Construct {
           },
           IMAGE_REPO_NAME: {
             type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: apiTestRepository.repositoryName
+            value: apiProdRepository.repositoryName
           }
         }
       },
     });
-
     apiProdRepository.grantPullPush(buildApiProductionImage);
     props.phpDevelopmentRepository.grantPullPush(buildApiProductionImage);
     props.phpProductionRepository.grantPullPush(buildApiProductionImage);
-
-    const nginxProdRepository = new ecr.Repository(this, 'NginxProdRepository', {
-      repositoryName: 'beep-nginx-prod',
-      lifecycleRules: [
-        {
-          description: 'Retain only the last 10 images',
-          maxImageCount: 10
-        }
-      ],
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
 
     const buildNginxProductionImage = new codeBuild.PipelineProject(this, 'BuildNginxProductionImage', {
       projectName: 'beep-build-nginx-production-image',
@@ -124,13 +121,14 @@ export class ApiCdPipeline extends cdk.Construct {
           },
           IMAGE_REPO_NAME: {
             type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: apiTestRepository.repositoryName
+            value: props.nginxProdRepository.repositoryName
           }
         }
       },
     });
+    props.nginxProdRepository.grantPullPush(buildNginxProductionImage);
 
-    nginxProdRepository.grantPullPush(buildNginxProductionImage);
+    /* Define pipeline */
 
     const apiPipeline = new codePipeline.Pipeline(this, 'ApiPipeline', {
       pipelineName: 'Api',
