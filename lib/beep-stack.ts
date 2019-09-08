@@ -13,6 +13,7 @@ import {ApplicationAcl} from "./application-acl";
 import {NginxCiPipeline} from "./nginx-ci-pipeline";
 import {PhpCiPipeline} from "./php-ci-pipeline";
 import {ApiCdPipeline} from "./api-cd-pipeline";
+import {Api} from "./api";
 
 export class BeepStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -174,9 +175,10 @@ export class BeepStack extends cdk.Stack {
       target: database
     });
 
-    const ecsCluster = new ecs.Cluster(this, 'EcsCluster', {
-      vpc: vpc,
-      clusterName: 'BeepProduction',
+    const api = new Api(this, 'Api', {
+      vpc,
+      nginxProductionRepository: nginxPipeline.productionRepository,
+      apiProductionRepository: apiPipeline.productionRepository,
     });
 
 
