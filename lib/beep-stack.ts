@@ -12,6 +12,7 @@ import {IngressAcl} from "./ingress-acl";
 import {ApplicationAcl} from "./application-acl";
 import {NginxCiPipeline} from "./nginx-ci-pipeline";
 import {PhpCiPipeline} from "./php-ci-pipeline";
+import {ApiCdPipeline} from "./api-cd-pipeline";
 
 export class BeepStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -81,6 +82,7 @@ export class BeepStack extends cdk.Stack {
 
     new NginxCiPipeline(this, 'NginxCiPipeline');
     new PhpCiPipeline(this, 'PhpCiPipeline');
+    new ApiCdPipeline(this, 'ApiCdPipeline');
 
     const loadBalancerSecurityGroup = new ec2.SecurityGroup(this, 'ApiLoadBalancerSecurityGroup', {
       vpc,
@@ -101,15 +103,15 @@ export class BeepStack extends cdk.Stack {
       securityGroup: loadBalancerSecurityGroup
     });
 
-    const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
-      domainName: 'stichtingbeep.nl',
-      privateZone: false
-    });
-
-    const certificate = new certificateManager.DnsValidatedCertificate(this, 'Certificate', {
-      domainName: 'api.stichtingbeep.nl',
-      hostedZone
-    });
+    // const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
+    //   domainName: 'stichtingbeep.nl',
+    //   privateZone: false
+    // });
+    //
+    // const certificate = new certificateManager.DnsValidatedCertificate(this, 'Certificate', {
+    //   domainName: 'api.stichtingbeep.nl',
+    //   hostedZone
+    // });
 
     // We need to insert a redirect action here later, but CDK does not support this yet due to a bug:
     // https://github.com/aws/aws-cdk/issues/2563
