@@ -80,9 +80,12 @@ export class BeepStack extends cdk.Stack {
       })
     });
 
-    new NginxCiPipeline(this, 'NginxCiPipeline');
-    new PhpCiPipeline(this, 'PhpCiPipeline');
-    new ApiCdPipeline(this, 'ApiCdPipeline');
+    const nginxPipeline = new NginxCiPipeline(this, 'NginxCiPipeline');
+    const phpPipeline = new PhpCiPipeline(this, 'PhpCiPipeline');
+    const apiPipeline = new ApiCdPipeline(this, 'ApiCdPipeline', {
+      phpDevelopmentRepository: phpPipeline.developmentRepository,
+      phpProductionRepository: phpPipeline.productionRepository,
+    });
 
     const loadBalancerSecurityGroup = new ec2.SecurityGroup(this, 'ApiLoadBalancerSecurityGroup', {
       vpc,

@@ -5,8 +5,14 @@ import codePipelineActions = require('@aws-cdk/aws-codepipeline-actions');
 import codeBuild = require('@aws-cdk/aws-codebuild');
 
 export class PhpCiPipeline extends cdk.Construct {
+
+  readonly developmentRepository: ecr.Repository;
+  readonly productionRepository: ecr.Repository;
+
   constructor(scope: cdk.Construct, id: string) {
     super(scope, id);
+
+
 
     const phpDevRepository = new ecr.Repository(this, 'PhpDevRepository', {
       repositoryName: 'beep-php-dev',
@@ -18,6 +24,7 @@ export class PhpCiPipeline extends cdk.Construct {
       ],
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
+    this.developmentRepository = phpDevRepository;
 
     const buildPhpDevelopmentImage = new codeBuild.PipelineProject(this, 'BuildPhpDevelopmentImage', {
       projectName: 'beep-build-php-development-image',
@@ -56,6 +63,7 @@ export class PhpCiPipeline extends cdk.Construct {
       ],
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
+    this.productionRepository = phpProdRepository;
 
     const buildPhpProductionImage = new codeBuild.PipelineProject(this, 'BuildPhpProductionImage', {
       projectName: 'beep-build-php-production-image',

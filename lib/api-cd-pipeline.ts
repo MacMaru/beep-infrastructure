@@ -3,9 +3,15 @@ import ecr = require('@aws-cdk/aws-ecr');
 import codePipeline = require('@aws-cdk/aws-codepipeline');
 import codePipelineActions = require('@aws-cdk/aws-codepipeline-actions');
 import codeBuild = require('@aws-cdk/aws-codebuild');
+import {SelectedSubnets, Vpc} from "@aws-cdk/aws-ec2";
+
+export interface ApiCdPipelineProps {
+  phpProductionRepository: ecr.Repository,
+  phpDevelopmentRepository: ecr.Repository,
+}
 
 export class ApiCdPipeline extends cdk.Construct {
-  constructor(scope: cdk.Construct, id: string) {
+  constructor(scope: cdk.Construct, id: string, props: ApiCdPipelineProps) {
     super(scope, id);
 
     const apiTestRepository = new ecr.Repository(this, 'ApiTestRepository', {
@@ -45,6 +51,8 @@ export class ApiCdPipeline extends cdk.Construct {
     });
 
     apiTestRepository.grantPullPush(buildApiTestImage);
+    props.phpDevelopmentRepository.grantPullPush(buildApiTestImage);
+    props.phpProductionRepository.grantPullPush(buildApiTestImage);
 
     const apiProdRepository = new ecr.Repository(this, 'ApiProdRepository', {
       repositoryName: 'beep-api-prod',
@@ -83,6 +91,8 @@ export class ApiCdPipeline extends cdk.Construct {
     });
 
     apiProdRepository.grantPullPush(buildApiProductionImage);
+    props.phpDevelopmentRepository.grantPullPush(buildApiProductionImage);
+    props.phpProductionRepository.grantPullPush(buildApiProductionImage);
 
     const nginxProdRepository = new ecr.Repository(this, 'NginxProdRepository', {
       repositoryName: 'beep-nginx-prod',
@@ -167,10 +177,9 @@ export class ApiCdPipeline extends cdk.Construct {
     const buildApiTestImageAction = new codePipelineActions.CodeBuildAction({
       actionName: 'BuildApiTestImage',
       input: apiSourceOutput,
-      project: buildApiProductionImage,
+      project: buildApiTestImage,
       outputs: [apiTestImageDetails],
       type: codePipelineActions.CodeBuildActionType.BUILD,
-      runOrder: 2
     });
     buildTestImageStage.addAction(buildApiTestImageAction);
 
