@@ -99,8 +99,8 @@ export class ApiCdPipeline extends cdk.Construct {
       },
     });
     apiProdRepository.grantPullPush(buildApiProductionImage);
-    props.phpDevelopmentRepository.grantPullPush(buildApiProductionImage);
-    props.phpProductionRepository.grantPullPush(buildApiProductionImage);
+    props.phpDevelopmentRepository.grantPull(buildApiProductionImage);
+    props.phpProductionRepository.grantPull(buildApiProductionImage);
 
     const buildNginxProductionImage = new codeBuild.PipelineProject(this, 'BuildNginxProductionImage', {
       projectName: 'beep-build-nginx-production-image',
@@ -127,6 +127,7 @@ export class ApiCdPipeline extends cdk.Construct {
       },
     });
     props.nginxProdRepository.grantPullPush(buildNginxProductionImage);
+    apiProdRepository.grantPull(buildNginxProductionImage);
 
     /* Define pipeline */
 
@@ -185,7 +186,7 @@ export class ApiCdPipeline extends cdk.Construct {
       stageName: 'BuildProductionImages',
     });
 
-    const apiProductionImageDetails = new codePipeline.Artifact();
+    const apiProductionImageDetails = new codePipeline.Artifact('ApiProductionImageDetails');
     const buildApiProductionImageAction = new codePipelineActions.CodeBuildAction({
       actionName: 'BuildApiProductionImage',
       input: apiSourceOutput,
@@ -200,6 +201,9 @@ export class ApiCdPipeline extends cdk.Construct {
     const buildNginxProductionImageAction = new codePipelineActions.CodeBuildAction({
       actionName: 'BuildNginxProductionImage',
       input: nginxSourceOutput,
+      extraInputs: [
+        apiProductionImageDetails
+      ],
       project: buildNginxProductionImage,
       outputs: [nginxProductionImageDetails],
       type: codePipelineActions.CodeBuildActionType.BUILD,
