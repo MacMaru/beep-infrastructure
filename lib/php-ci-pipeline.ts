@@ -76,7 +76,7 @@ export class PhpCiPipeline extends cdk.Construct {
           },
           IMAGE_REPO_NAME: {
             type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: phpDevRepository.repositoryName
+            value: phpProdRepository.repositoryName
           }
         }
       },
