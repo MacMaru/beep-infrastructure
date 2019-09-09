@@ -74,7 +74,7 @@ export class EgressAcl extends cdk.Construct {
             ruleNumber: 4,
             protocol: 6,
             portRange: {
-                from: 32768,
+                from: 1024,
                 to: 65535
             },
             cidrBlock: '0.0.0.0/0',

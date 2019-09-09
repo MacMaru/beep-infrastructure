@@ -89,7 +89,7 @@ export class ApplicationAcl extends cdk.Construct {
             ruleNumber: 2,
             protocol: 6,
             portRange: {
-                from: 1024,
+                from: 32768,
                 to: 65535
             },
             cidrBlock: '0.0.0.0/0',
@@ -99,8 +99,8 @@ export class ApplicationAcl extends cdk.Construct {
         // Fargate -> Rds
         new CfnNetworkAclEntry(this, 'OutboundMySql', {
             networkAclId: applicationAcl.ref,
-            egress: false,
-            ruleNumber: 3,
+            egress: true,
+            ruleNumber: 4,
             protocol: 6,
             portRange: {
                 from: 3306,
