@@ -7,5 +7,9 @@
   "hosted-zone:account=038855593698:domainName=stichtingbeep.nl:privateZone=false:region=eu-west-1": {
     "Id": "/hostedzone/Z38NR3XIKW4G0O",
     "Name": "stichtingbeep.nl."
+  },
+  "hosted-zone:account=038855593698:domainName=stichtingbeep.nl:region=eu-west-1": {
+    "Id": "/hostedzone/Z38NR3XIKW4G0O",
+    "Name": "stichtingbeep.nl."
   }
 }

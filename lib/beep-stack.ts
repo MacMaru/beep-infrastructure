@@ -14,9 +14,14 @@ import {NginxCiPipeline} from "./nginx-ci-pipeline";
 import {PhpCiPipeline} from "./php-ci-pipeline";
 import {ApiCdPipeline} from "./api-cd-pipeline";
 import {Api} from "./api";
+import {StackProps} from "@aws-cdk/core";
+
+export interface BeepStackProps extends StackProps{
+  domainName: string,
+}
 
 export class BeepStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: cdk.Construct, id: string, props: BeepStackProps) {
     super(scope, id, props);
 
     const vpc = new ec2.Vpc(this, 'Production', {
@@ -89,43 +94,6 @@ export class BeepStack extends cdk.Stack {
       nginxProdRepository: nginxPipeline.productionRepository,
     });
 
-    const loadBalancerSecurityGroup = new ec2.SecurityGroup(this, 'ApiLoadBalancerSecurityGroup', {
-      vpc,
-      description: 'Elb security group',
-    });
-
-    const apiLoadBalancer = new elb.ApplicationLoadBalancer(this, 'ApiLoadBalancer', {
-      vpc,
-      vpcSubnets: {
-        subnetName: 'Ingress'
-      },
-      internetFacing: true,
-      deletionProtection: false,
-      http2Enabled: false,
-      loadBalancerName: 'beep-api',
-      idleTimeout: cdk.Duration.seconds(20),
-      ipAddressType: elb.IpAddressType.IPV4,
-      securityGroup: loadBalancerSecurityGroup
-    });
-
-    const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
-      domainName: 'stichtingbeep.nl',
-      privateZone: false
-    });
-
-    const certificate = new certificateManager.DnsValidatedCertificate(this, 'Certificate', {
-      domainName: 'api.stichtingbeep.nl',
-      hostedZone
-    });
-
-    // We need to insert a redirect action here later, but CDK does not support this yet due to a bug:
-    // https://github.com/aws/aws-cdk/issues/2563
-    // For now we can add this redirect action from http to https manually through the console.
-
-
-
-
-
     const dbMasterCredentials = new secretsmanager.Secret(this, 'DbMasterCredentials', {
       secretName: 'Beep/Production/DbMasterCredentials',
       description: 'Password for the RDS master user.',
@@ -175,10 +143,15 @@ export class BeepStack extends cdk.Stack {
       target: database
     });
 
+    const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
+      domainName: props.domainName,
+    });
+
     const api = new Api(this, 'Api', {
       vpc,
       nginxProductionRepository: nginxPipeline.productionRepository,
       apiProductionRepository: apiPipeline.productionRepository,
+      hostedZone,
     });
 
 
