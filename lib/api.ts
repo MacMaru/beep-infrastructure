@@ -2,6 +2,7 @@ import cdk = require('@aws-cdk/core');
 import ec2 = require('@aws-cdk/aws-ec2');
 import ecs = require('@aws-cdk/aws-ecs');
 import ecr = require('@aws-cdk/aws-ecr');
+import logs = require('@aws-cdk/aws-logs');
 
 export interface ApiProps {
   vpc: ec2.Vpc
@@ -24,18 +25,36 @@ export class Api extends cdk.Construct {
       memoryLimitMiB: 2048,
     });
 
-    apiTask.addContainer('nginx', {
-      image: ecs.ContainerImage.fromEcrRepository(props.nginxProductionRepository),
-      essential: true,
-      // logging: ecs.LogDriver.awsLogs({
-      //   logGroup: ,
-      //   streamPrefix: 'ecs',
-      //   logRetention:
-      // })
+    props.nginxProductionRepository.grantPull(apiTask.taskRole);
+    props.apiProductionRepository.grantPull(apiTask.taskRole);
+
+    const apiLogs = new logs.LogGroup(this, 'NginxLogs', {
+      logGroupName: 'Api/Production',
+      retention: logs.RetentionDays.ONE_DAY,
+      removalPolicy: cdk.RemovalPolicy.DESTROY
     });
 
-    apiTask.addContainer('api', {
+    const apiContainer = apiTask.addContainer('api', {
       image: ecs.ContainerImage.fromEcrRepository(props.apiProductionRepository),
+      essential: true,
+      logging: ecs.LogDriver.awsLogs({
+        logGroup: apiLogs,
+        streamPrefix: 'php',
+      })
+    });
+
+    const nginxContainer = apiTask.addContainer('nginx', {
+      image: ecs.ContainerImage.fromEcrRepository(props.nginxProductionRepository),
+      essential: true,
+      logging: ecs.LogDriver.awsLogs({
+        logGroup: apiLogs,
+        streamPrefix: 'nginx',
+      }),
+    });
+
+    nginxContainer.addContainerDependencies({
+      container: apiContainer,
+      condition: ecs.ContainerDependencyCondition.START
     });
 
     const apiService = new ecs.FargateService(this, 'ApiService', {
@@ -51,6 +70,7 @@ export class Api extends cdk.Construct {
       minHealthyPercent: 100,
       maxHealthyPercent: 200,
       platformVersion: ecs.FargatePlatformVersion.LATEST,
+
     });
   }
 }
