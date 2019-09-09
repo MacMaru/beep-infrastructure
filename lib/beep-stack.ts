@@ -108,15 +108,15 @@ export class BeepStack extends cdk.Stack {
       securityGroup: loadBalancerSecurityGroup
     });
 
-    // const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
-    //   domainName: 'stichtingbeep.nl',
-    //   privateZone: false
-    // });
-    //
-    // const certificate = new certificateManager.DnsValidatedCertificate(this, 'Certificate', {
-    //   domainName: 'api.stichtingbeep.nl',
-    //   hostedZone
-    // });
+    const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
+      domainName: 'stichtingbeep.nl',
+      privateZone: false
+    });
+
+    const certificate = new certificateManager.DnsValidatedCertificate(this, 'Certificate', {
+      domainName: 'api.stichtingbeep.nl',
+      hostedZone
+    });
 
     // We need to insert a redirect action here later, but CDK does not support this yet due to a bug:
     // https://github.com/aws/aws-cdk/issues/2563
