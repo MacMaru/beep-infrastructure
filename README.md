@@ -22,7 +22,7 @@ npm install
 
 ### Prerequisites
 
-Before deploying the stack for the first time, there must be a hosted zone present in route 53. This hosted zone must represent manage the domain name that you pass to the BeepStack constructor in `beep-infrastructure.ts`:
+Before deploying the stack for the first time, there must be a hosted zone present in route 53. This hosted zone must manage the domain name that you pass to the BeepStack constructor in `beep-infrastructure.ts`:
 
 ```
 new BeepStack(app, 'Beep', {
@@ -34,6 +34,8 @@ new BeepStack(app, 'Beep', {
 });
 ```
 
+If you have recently created this hosted zone, you should wait 24-48 hours for the DNS records to properly propagate, before you deploy the stack for the first time (or change the domain name).
+If you do not do this, the certificate generation process will fail, because this process uses DNS validation to automatically validate requested certificates.
 ### Production
 
 Before you deploy the updated app, evaluate the difference between the AWS CDK app and the deployed app:
