@@ -209,5 +209,13 @@ export class ApiCdPipeline extends cdk.Construct {
       runOrder: 2
     });
     buildProductionImagesStage.addAction(buildNginxProductionImageAction);
+
+    const deployToProduction = apiPipeline.addStage({
+      stageName: 'DeployToProduction'
+    })
+
+    const deployToProductionAction = new codePipelineActions.EcsDeployAction({
+
+    })
   }
 }
