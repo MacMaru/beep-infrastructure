@@ -1,17 +1,16 @@
 import cdk = require('@aws-cdk/core');
 import ec2 = require('@aws-cdk/aws-ec2');
 import ecs = require('@aws-cdk/aws-ecs');
-import ecr = require('@aws-cdk/aws-ecr');
 import logs = require('@aws-cdk/aws-logs');
 import elb = require('@aws-cdk/aws-elasticloadbalancingv2');
 import route53 = require('@aws-cdk/aws-route53');
 import route53Targets = require('@aws-cdk/aws-route53-targets');
 import certificateManager = require('@aws-cdk/aws-certificatemanager');
+import {Storage} from "./storage";
 
 export interface ApiProps {
   vpc: ec2.Vpc,
-  nginxProductionRepository: ecr.Repository,
-  apiProductionRepository: ecr.Repository,
+  storage: Storage,
   hostedZone: route53.IHostedZone,
 }
 
@@ -40,8 +39,8 @@ export class Api extends cdk.Construct {
       cpu: 256,
       memoryLimitMiB: 2048,
     });
-    props.nginxProductionRepository.grantPull(apiTask.taskRole);
-    props.apiProductionRepository.grantPull(apiTask.taskRole);
+    props.storage.ecr.nginxProductionRepository.grantPull(apiTask.taskRole);
+    props.storage.ecr.apiProductionRepository.grantPull(apiTask.taskRole);
 
     const apiLogs = new logs.LogGroup(this, 'ApiLogs', {
       logGroupName: 'Api/Production',
@@ -50,7 +49,7 @@ export class Api extends cdk.Construct {
     });
 
     const nginxContainer = apiTask.addContainer('nginx', {
-      image: ecs.ContainerImage.fromEcrRepository(props.nginxProductionRepository),
+      image: ecs.ContainerImage.fromEcrRepository(props.storage.ecr.nginxProductionRepository),
       essential: true,
       logging: ecs.LogDriver.awsLogs({
         logGroup: apiLogs,
@@ -65,7 +64,7 @@ export class Api extends cdk.Construct {
     });
 
     const apiContainer = apiTask.addContainer('api', {
-      image: ecs.ContainerImage.fromEcrRepository(props.apiProductionRepository),
+      image: ecs.ContainerImage.fromEcrRepository(props.storage.ecr.apiProductionRepository),
       essential: true,
       logging: ecs.LogDriver.awsLogs({
         logGroup: apiLogs,

@@ -1,30 +1,17 @@
 import cdk = require('@aws-cdk/core');
-import ecr = require('@aws-cdk/aws-ecr');
 import codePipeline = require('@aws-cdk/aws-codepipeline');
 import codePipelineActions = require('@aws-cdk/aws-codepipeline-actions');
 import codeBuild = require('@aws-cdk/aws-codebuild');
+import {Storage} from "./storage";
+
+export interface PhpCiPipelineProps {
+  storage: Storage
+}
 
 export class PhpCiPipeline extends cdk.Construct {
 
-  readonly developmentRepository: ecr.Repository;
-  readonly productionRepository: ecr.Repository;
-
-  constructor(scope: cdk.Construct, id: string) {
+  constructor(scope: cdk.Construct, id: string, props: PhpCiPipelineProps) {
     super(scope, id);
-
-
-
-    const phpDevRepository = new ecr.Repository(this, 'PhpDevRepository', {
-      repositoryName: 'beep-php-dev',
-      lifecycleRules: [
-        {
-          description: 'Retain only the last 10 images',
-          maxImageCount: 10
-        }
-      ],
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
-    this.developmentRepository = phpDevRepository;
 
     const buildPhpDevelopmentImage = new codeBuild.PipelineProject(this, 'BuildPhpDevelopmentImage', {
       projectName: 'beep-build-php-development-image',
@@ -45,24 +32,14 @@ export class PhpCiPipeline extends cdk.Construct {
           },
           IMAGE_REPO_NAME: {
             type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: phpDevRepository.repositoryName
+            value: props.storage.ecr.phpDevelopmentRepository.repositoryName
           }
         }
       },
     });
-    phpDevRepository.grantPullPush(buildPhpDevelopmentImage);
+    props.storage.ecr.phpDevelopmentRepository.grantPullPush(buildPhpDevelopmentImage);
 
-    const phpProdRepository = new ecr.Repository(this, 'PhpProdRepository', {
-      repositoryName: 'beep-php-prod',
-      lifecycleRules: [
-        {
-          description: 'Retain only the last 10 images',
-          maxImageCount: 10
-        }
-      ],
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
-    this.productionRepository = phpProdRepository;
+
 
     const buildPhpProductionImage = new codeBuild.PipelineProject(this, 'BuildPhpProductionImage', {
       projectName: 'beep-build-php-production-image',
@@ -83,13 +60,13 @@ export class PhpCiPipeline extends cdk.Construct {
           },
           IMAGE_REPO_NAME: {
             type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: phpProdRepository.repositoryName
+            value: props.storage.ecr.phpProductionRepository.repositoryName
           }
         }
       },
     });
 
-    phpProdRepository.grantPullPush(buildPhpProductionImage);
+    props.storage.ecr.phpProductionRepository.grantPullPush(buildPhpProductionImage);
 
     const phpPipeline = new codePipeline.Pipeline(this, 'PhpPipeline', {
       pipelineName: 'Php',

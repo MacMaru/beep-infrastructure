@@ -1,27 +1,16 @@
 import cdk = require('@aws-cdk/core');
-import ecr = require('@aws-cdk/aws-ecr');
 import codePipeline = require('@aws-cdk/aws-codepipeline');
 import codePipelineActions = require('@aws-cdk/aws-codepipeline-actions');
 import codeBuild = require('@aws-cdk/aws-codebuild');
+import {Storage} from "./storage";
+
+export interface NginxCiPipelineProps {
+  storage: Storage
+}
 
 export class NginxCiPipeline extends cdk.Construct {
-  readonly developmentRepository: ecr.Repository;
-  readonly productionRepository: ecr.Repository;
-
-  constructor(scope: cdk.Construct, id: string) {
+  constructor(scope: cdk.Construct, id: string, props: NginxCiPipelineProps) {
     super(scope, id);
-
-    const nginxDevRepository = new ecr.Repository(this, 'NginxDevRepository', {
-      repositoryName: 'beep-nginx-dev',
-      lifecycleRules: [
-        {
-          description: 'Retain only the last 10 images',
-          maxImageCount: 10
-        }
-      ],
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
-    this.developmentRepository = nginxDevRepository;
 
     const buildNginxDevelopmentImage = new codeBuild.PipelineProject(this, 'BuildNginxDevelopmentImage', {
       projectName: 'beep-build-nginx-development-image',
@@ -42,24 +31,12 @@ export class NginxCiPipeline extends cdk.Construct {
           },
           IMAGE_REPO_NAME: {
             type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: nginxDevRepository.repositoryName
+            value: props.storage.ecr.nginxDevelopmentRepository.repositoryName
           }
         }
       },
     });
-    nginxDevRepository.grantPullPush(buildNginxDevelopmentImage);
-
-    const nginxProdRepository = new ecr.Repository(this, 'NginxProdRepository', {
-      repositoryName: 'beep-nginx-prod',
-      lifecycleRules: [
-        {
-          description: 'Retain only the last 10 images',
-          maxImageCount: 10
-        }
-      ],
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
-    this.productionRepository = nginxProdRepository;
+    props.storage.ecr.nginxDevelopmentRepository.grantPullPush(buildNginxDevelopmentImage);
 
     const nginxPipeline = new codePipeline.Pipeline(this, 'NginxPipeline', {
       pipelineName: 'Nginx',
