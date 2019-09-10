@@ -36,6 +36,11 @@ new BeepStack(app, 'Beep', {
 
 If you have recently created this hosted zone, you should wait 24-48 hours for the DNS records to properly propagate, before you deploy the stack for the first time (or change the domain name).
 If you do not do this, the certificate generation process will fail, because this process uses DNS validation to automatically validate requested certificates.
+
+### Initial deployment
+
+When you deploy the stack for the first time, make sure to set the desired service count to 0, because the images do not yet exist.
+
 ### Production
 
 Before you deploy the updated app, evaluate the difference between the AWS CDK app and the deployed app:
