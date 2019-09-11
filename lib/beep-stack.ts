@@ -86,16 +86,6 @@ export class BeepStack extends cdk.Stack {
       })
     });
 
-    const nginxPipeline = new NginxCiPipeline(this, 'NginxCiPipeline', {
-      storage
-    });
-    const phpPipeline = new PhpCiPipeline(this, 'PhpCiPipeline', {
-      storage
-    });
-    const apiPipeline = new ApiCdPipeline(this, 'ApiCdPipeline', {
-      storage
-    });
-
     const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
       domainName: props.domainName,
     });
@@ -106,5 +96,17 @@ export class BeepStack extends cdk.Stack {
       hostedZone,
     });
 
+    const nginxPipeline = new NginxCiPipeline(this, 'NginxCiPipeline', {
+      storage
+    });
+
+    const phpPipeline = new PhpCiPipeline(this, 'PhpCiPipeline', {
+      storage
+    });
+
+    const apiPipeline = new ApiCdPipeline(this, 'ApiCdPipeline', {
+      storage,
+      service: api.service
+    });
   }
 }

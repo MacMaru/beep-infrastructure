@@ -85,10 +85,10 @@ export class Api extends cdk.Construct {
       serviceName: 'apiService',
       taskDefinition: apiTask,
       assignPublicIp: false,
-      desiredCount: 0,
+      desiredCount: 1,
       // healthCheckGracePeriod: cdk.Duration.seconds(30),
-      minHealthyPercent: 100,
-      maxHealthyPercent: 200,
+      minHealthyPercent: 0,
+      maxHealthyPercent: 100,
       platformVersion: ecs.FargatePlatformVersion.LATEST,
     });
     this.service = service;

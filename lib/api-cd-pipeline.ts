@@ -1,4 +1,5 @@
 import cdk = require('@aws-cdk/core');
+import ecs = require('@aws-cdk/aws-ecs');
 import codePipeline = require('@aws-cdk/aws-codepipeline');
 import codePipelineActions = require('@aws-cdk/aws-codepipeline-actions');
 import codeBuild = require('@aws-cdk/aws-codebuild');
@@ -6,6 +7,7 @@ import {Storage} from "./storage";
 
 export interface ApiCdPipelineProps {
   storage: Storage,
+  service: ecs.FargateService
 }
 
 export class ApiCdPipeline extends cdk.Construct {
@@ -166,7 +168,7 @@ export class ApiCdPipeline extends cdk.Construct {
     });
     buildProductionImagesStage.addAction(buildApiProductionImageAction);
 
-    const nginxProductionImageDetails = new codePipeline.Artifact();
+    const imageDefinitions = new codePipeline.Artifact('ImageDefinitions');
     const buildNginxProductionImageAction = new codePipelineActions.CodeBuildAction({
       actionName: 'BuildNginxProductionImage',
       input: nginxSourceOutput,
@@ -174,18 +176,21 @@ export class ApiCdPipeline extends cdk.Construct {
         apiProductionImageDetails
       ],
       project: buildNginxProductionImage,
-      outputs: [nginxProductionImageDetails],
+      outputs: [imageDefinitions],
       type: codePipelineActions.CodeBuildActionType.BUILD,
       runOrder: 2
     });
     buildProductionImagesStage.addAction(buildNginxProductionImageAction);
 
-    // const deployToProduction = apiPipeline.addStage({
-    //   stageName: 'DeployToProduction'
-    // })
-    //
-    // const deployToProductionAction = new codePipelineActions.EcsDeployAction({
-    //
-    // })
+    const deployToProduction = apiPipeline.addStage({
+      stageName: 'DeployToProduction'
+    });
+
+    const deployToProductionAction = new codePipelineActions.EcsDeployAction({
+      actionName: 'DeployToProduction',
+      input: imageDefinitions,
+      service: props.service
+    });
+    deployToProduction.addAction(deployToProductionAction);
   }
 }
