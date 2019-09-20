@@ -37,6 +37,8 @@ new BeepStack(app, 'Beep', {
 If you have recently created this hosted zone, you should wait 24-48 hours for the DNS records to properly propagate, before you deploy the stack for the first time (or change the domain name).
 If you do not do this, the certificate generation process will fail, because this process uses DNS validation to automatically validate requested certificates.
 
+For email sending, you must have an active SES configuration. In the cognito file you must add the correct ARN for the from address. 
+
 ### Initial deployment
 
 When you deploy the stack for the first time, make sure to set the desired service count to 0, because the images do not yet exist.
