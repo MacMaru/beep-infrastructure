@@ -11,6 +11,7 @@ import {ApiCdPipeline} from "./api-cd-pipeline";
 import {Api} from "./api";
 import {StackProps} from "@aws-cdk/core";
 import {Storage} from "./storage";
+import {Cognito} from "./cognito";
 
 export interface BeepStackProps extends StackProps{
   domainName: string,
@@ -108,5 +109,7 @@ export class BeepStack extends cdk.Stack {
       storage,
       service: api.service
     });
+
+    const cognito = new Cognito(this, 'Cognito')
   }
 }
