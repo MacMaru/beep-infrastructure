@@ -94,7 +94,7 @@ export class BeepStack extends cdk.Stack {
     const api = new Api(this, 'Api', {
       vpc,
       storage,
-      hostedZone,
+      hostedZone
     });
 
     const nginxPipeline = new NginxCiPipeline(this, 'NginxCiPipeline', {
