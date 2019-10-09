@@ -1,20 +1,20 @@
 import cdk = require('@aws-cdk/core');
-import secretsManager = require('@aws-cdk/aws-secretsmanager');
-import ssm = require('@aws-cdk/aws-ssm');
 import rds = require('@aws-cdk/aws-rds');
 import ec2 = require('@aws-cdk/aws-ec2');
+import secretsManager = require('@aws-cdk/aws-secretsmanager');
+import ssm = require('@aws-cdk/aws-ssm');
 
-export interface RdsRegistryProps {
+export interface RdsStackProperties extends cdk.StackProps{
   vpc: ec2.Vpc
 }
 
-export class RdsRegistry extends cdk.Construct {
+export class RdsStack extends cdk.Stack {
 
   readonly apiDatabase: rds.DatabaseInstance;
   readonly apiDatabaseMasterCredentials: secretsManager.Secret;
 
-  constructor(scope: cdk.Construct, id: string, props: RdsRegistryProps) {
-    super(scope, id);
+  constructor(scope: cdk.Construct, id: string, props: RdsStackProperties) {
+    super(scope, id, props);
 
     const dbMasterCredentials = new secretsManager.Secret(this, 'DatabaseMasterCredentials', {
       secretName: 'Beep/Production/Api/DatabaseMasterCredentials',
@@ -52,7 +52,8 @@ export class RdsRegistry extends cdk.Construct {
       preferredMaintenanceWindow: 'Sun:02:00-Sun:03:00',
       autoMinorVersionUpgrade: true,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
-      //deletionProtection: true,
+      // Add deletion protection in prod
+      deletionProtection: false,
     });
     this.apiDatabase = database;
 

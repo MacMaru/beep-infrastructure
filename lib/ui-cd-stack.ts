@@ -2,16 +2,15 @@ import cdk = require('@aws-cdk/core');
 import codeBuild = require('@aws-cdk/aws-codebuild');
 import codePipeline = require('@aws-cdk/aws-codepipeline');
 import codePipelineActions = require('@aws-cdk/aws-codepipeline-actions');
-import {Storage} from "./storage";
+import {S3Stack} from "./s3-stack";
 
-export interface UiCdPipelineProps {
-  storage: Storage
+export interface UiCdStackProps extends cdk.StackProps{
+  s3: S3Stack,
 }
 
-export class UiCdPipeline extends cdk.Construct {
-
-  constructor(scope: cdk.Construct, id: string, props: UiCdPipelineProps) {
-    super(scope, id);
+export class UiCdStack extends cdk.Stack {
+  constructor(scope: cdk.Construct, id: string, props: UiCdStackProps) {
+    super(scope, id, props);
 
     const buildUiProductionDistribution = new codeBuild.PipelineProject(this, 'BuildUiProductionDistribution', {
       projectName: 'beep-build-ui-production-distribution',
@@ -30,10 +29,6 @@ export class UiCdPipeline extends cdk.Construct {
             type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
             value: cdk.Stack.of(this).region
           },
-          IMAGE_REPO_NAME: {
-            type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: props.storage.ecr.apiTestRepository.repositoryName
-          }
         }
       },
     });
@@ -86,9 +81,8 @@ export class UiCdPipeline extends cdk.Construct {
       actionName: 'DeployUiProduction',
       input: uiProductionDistribution,
       extract: true,
-      bucket: props.storage.s3.uiBucket
+      bucket: props.s3.uiBucket
     })
     deployStage.addAction(uiDeployAction)
   }
-
 }

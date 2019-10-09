@@ -2,10 +2,10 @@ import cdk = require('@aws-cdk/core');
 import codePipeline = require('@aws-cdk/aws-codepipeline');
 import codePipelineActions = require('@aws-cdk/aws-codepipeline-actions');
 import codeBuild = require('@aws-cdk/aws-codebuild');
-import {Storage} from "./storage";
+import {EcrStack} from "./ecr-stack";
 
 export interface PhpCiPipelineProps {
-  storage: Storage
+  ecr: EcrStack
 }
 
 export class PhpCiPipeline extends cdk.Construct {
@@ -32,12 +32,12 @@ export class PhpCiPipeline extends cdk.Construct {
           },
           IMAGE_REPO_NAME: {
             type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: props.storage.ecr.phpDevelopmentRepository.repositoryName
+            value: props.ecr.phpDevelopmentRepository.repositoryName
           }
         }
       },
     });
-    props.storage.ecr.phpDevelopmentRepository.grantPullPush(buildPhpDevelopmentImage);
+    props.ecr.phpDevelopmentRepository.grantPullPush(buildPhpDevelopmentImage);
 
 
 
@@ -60,13 +60,13 @@ export class PhpCiPipeline extends cdk.Construct {
           },
           IMAGE_REPO_NAME: {
             type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: props.storage.ecr.phpProductionRepository.repositoryName
+            value: props.ecr.phpProductionRepository.repositoryName
           }
         }
       },
     });
 
-    props.storage.ecr.phpProductionRepository.grantPullPush(buildPhpProductionImage);
+    props.ecr.phpProductionRepository.grantPullPush(buildPhpProductionImage);
 
     const phpPipeline = new codePipeline.Pipeline(this, 'PhpPipeline', {
       pipelineName: 'Php',

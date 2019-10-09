@@ -6,27 +6,30 @@ import elb = require('@aws-cdk/aws-elasticloadbalancingv2');
 import route53 = require('@aws-cdk/aws-route53');
 import route53Targets = require('@aws-cdk/aws-route53-targets');
 import certificateManager = require('@aws-cdk/aws-certificatemanager');
-import {Storage} from "./storage";
+import {EcrStack} from "./ecr-stack";
 
-export interface ApiProps {
+export interface ApiStackProps extends cdk.StackProps{
   vpc: ec2.Vpc,
-  storage: Storage,
-  hostedZone: route53.IHostedZone,
+  ecr: EcrStack,
+  domainName: string
 }
 
-export class Api extends cdk.Construct {
-
+export class ApiStack extends cdk.Stack {
   readonly service: ecs.FargateService;
 
   static readonly apiSubdomain = 'api';
 
-  constructor(scope: cdk.Construct, id: string, props: ApiProps) {
-    super(scope, id);
+  constructor(scope: cdk.Construct, id: string, props: ApiStackProps) {
+    super(scope, id, props);
 
-    const apiDomainName = Api.apiSubdomain + '.' + props.hostedZone.zoneName;
+    const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
+      domainName: props.domainName,
+    })
+
+    const apiDomainName = ApiStack.apiSubdomain + '.' + hostedZone.zoneName;
     const certificate = new certificateManager.DnsValidatedCertificate(this, 'Certificate', {
       domainName: apiDomainName,
-      hostedZone: props.hostedZone
+      hostedZone: hostedZone
     });
 
     const cluster = new ecs.Cluster(this, 'EcsCluster', {
@@ -39,8 +42,8 @@ export class Api extends cdk.Construct {
       cpu: 256,
       memoryLimitMiB: 2048,
     });
-    props.storage.ecr.nginxProductionRepository.grantPull(apiTask.taskRole);
-    props.storage.ecr.apiProductionRepository.grantPull(apiTask.taskRole);
+    props.ecr.nginxProductionRepository.grantPull(apiTask.taskRole);
+    props.ecr.apiProductionRepository.grantPull(apiTask.taskRole);
 
     const apiLogs = new logs.LogGroup(this, 'ApiLogs', {
       logGroupName: 'Api/Production',
@@ -49,7 +52,7 @@ export class Api extends cdk.Construct {
     });
 
     const nginxContainer = apiTask.addContainer('nginx', {
-      image: ecs.ContainerImage.fromEcrRepository(props.storage.ecr.nginxProductionRepository),
+      image: ecs.ContainerImage.fromEcrRepository(props.ecr.nginxProductionRepository),
       essential: true,
       logging: ecs.LogDriver.awsLogs({
         logGroup: apiLogs,
@@ -64,7 +67,7 @@ export class Api extends cdk.Construct {
     });
 
     const apiContainer = apiTask.addContainer('api', {
-      image: ecs.ContainerImage.fromEcrRepository(props.storage.ecr.apiProductionRepository),
+      image: ecs.ContainerImage.fromEcrRepository(props.ecr.apiProductionRepository),
       essential: true,
       logging: ecs.LogDriver.awsLogs({
         logGroup: apiLogs,
@@ -108,7 +111,7 @@ export class Api extends cdk.Construct {
 
     new route53.ARecord(this, 'Alias', {
       target: route53.RecordTarget.fromAlias(new route53Targets.LoadBalancerTarget(loadBalancer)),
-      zone: props.hostedZone,
+      zone: hostedZone,
       recordName: apiDomainName,
       comment: 'Domain for Beep API.',
       ttl: cdk.Duration.seconds(300)

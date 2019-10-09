@@ -2,10 +2,10 @@ import cdk = require('@aws-cdk/core');
 import codePipeline = require('@aws-cdk/aws-codepipeline');
 import codePipelineActions = require('@aws-cdk/aws-codepipeline-actions');
 import codeBuild = require('@aws-cdk/aws-codebuild');
-import {Storage} from "./storage";
+import {EcrStack} from "./ecr-stack";
 
 export interface NginxCiPipelineProps {
-  storage: Storage
+  ecr: EcrStack
 }
 
 export class NginxCiPipeline extends cdk.Construct {
@@ -31,12 +31,12 @@ export class NginxCiPipeline extends cdk.Construct {
           },
           IMAGE_REPO_NAME: {
             type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: props.storage.ecr.nginxDevelopmentRepository.repositoryName
+            value: props.ecr.nginxDevelopmentRepository.repositoryName
           }
         }
       },
     });
-    props.storage.ecr.nginxDevelopmentRepository.grantPullPush(buildNginxDevelopmentImage);
+    props.ecr.nginxDevelopmentRepository.grantPullPush(buildNginxDevelopmentImage);
 
     const nginxPipeline = new codePipeline.Pipeline(this, 'NginxPipeline', {
       pipelineName: 'Nginx',

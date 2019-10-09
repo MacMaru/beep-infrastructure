@@ -1,7 +1,7 @@
 import cdk = require('@aws-cdk/core');
 import ecr = require('@aws-cdk/aws-ecr');
 
-export class EcrRegistry extends cdk.Construct {
+export class EcrStack extends cdk.Stack {
 
   readonly phpProductionRepository: ecr.Repository;
   readonly phpDevelopmentRepository: ecr.Repository;
@@ -10,8 +10,8 @@ export class EcrRegistry extends cdk.Construct {
   readonly apiTestRepository: ecr.Repository;
   readonly apiProductionRepository: ecr.Repository;
 
-  constructor(scope: cdk.Construct, id: string) {
-    super(scope, id);
+  constructor(scope: cdk.Construct, id: string, props: cdk.StackProps) {
+    super(scope, id, props);
 
     this.nginxDevelopmentRepository = new ecr.Repository(this, 'NginxDevelopmentRepository', {
       repositoryName: 'beep-nginx-dev',

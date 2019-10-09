@@ -1,10 +1,9 @@
 import cdk = require('@aws-cdk/core');
 import cognito = require('@aws-cdk/aws-cognito');
 
-export class Cognito extends cdk.Construct {
-
-  constructor(scope: cdk.Construct, id: string) {
-    super(scope, id);
+export class CognitoStack extends cdk.Stack {
+  constructor(scope: cdk.Construct, id: string, props: cdk.StackProps) {
+    super(scope, id, props);
 
     const userPool = new cognito.UserPool(this, 'BeepProduction', {
       userPoolName: 'BeepProduction',
@@ -36,5 +35,4 @@ export class Cognito extends cdk.Construct {
     cfnUserPoolClient.allowedOAuthScopes = ['email', 'openid', 'profile']
     cfnUserPoolClient.supportedIdentityProviders = ['COGNITO']
   }
-
 }

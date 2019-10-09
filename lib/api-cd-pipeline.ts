@@ -3,10 +3,10 @@ import ecs = require('@aws-cdk/aws-ecs');
 import codePipeline = require('@aws-cdk/aws-codepipeline');
 import codePipelineActions = require('@aws-cdk/aws-codepipeline-actions');
 import codeBuild = require('@aws-cdk/aws-codebuild');
-import {Storage} from "./storage";
+import {EcrStack} from "./ecr-stack";
 
 export interface ApiCdPipelineProps {
-  storage: Storage,
+  ecr: EcrStack,
   service: ecs.FargateService
 }
 
@@ -36,14 +36,14 @@ export class ApiCdPipeline extends cdk.Construct {
           },
           IMAGE_REPO_NAME: {
             type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: props.storage.ecr.apiTestRepository.repositoryName
+            value: props.ecr.apiTestRepository.repositoryName
           }
         }
       },
     });
-    props.storage.ecr.apiTestRepository.grantPullPush(buildApiTestImage);
-    props.storage.ecr.phpDevelopmentRepository.grantPullPush(buildApiTestImage);
-    props.storage.ecr.phpProductionRepository.grantPullPush(buildApiTestImage);
+    props.ecr.apiTestRepository.grantPullPush(buildApiTestImage);
+    props.ecr.phpDevelopmentRepository.grantPullPush(buildApiTestImage);
+    props.ecr.phpProductionRepository.grantPullPush(buildApiTestImage);
 
     const buildApiProductionImage = new codeBuild.PipelineProject(this, 'BuildApiProductionImage', {
       projectName: 'beep-build-api-production-image',
@@ -64,14 +64,14 @@ export class ApiCdPipeline extends cdk.Construct {
           },
           IMAGE_REPO_NAME: {
             type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: props.storage.ecr.apiProductionRepository.repositoryName
+            value: props.ecr.apiProductionRepository.repositoryName
           }
         }
       },
     });
-    props.storage.ecr.apiProductionRepository.grantPullPush(buildApiProductionImage);
-    props.storage.ecr.phpDevelopmentRepository.grantPullPush(buildApiProductionImage);
-    props.storage.ecr.phpProductionRepository.grantPullPush(buildApiProductionImage);
+    props.ecr.apiProductionRepository.grantPullPush(buildApiProductionImage);
+    props.ecr.phpDevelopmentRepository.grantPullPush(buildApiProductionImage);
+    props.ecr.phpProductionRepository.grantPullPush(buildApiProductionImage);
 
     const buildNginxProductionImage = new codeBuild.PipelineProject(this, 'BuildNginxProductionImage', {
       projectName: 'beep-build-nginx-production-image',
@@ -92,13 +92,13 @@ export class ApiCdPipeline extends cdk.Construct {
           },
           IMAGE_REPO_NAME: {
             type: codeBuild.BuildEnvironmentVariableType.PLAINTEXT,
-            value: props.storage.ecr.nginxProductionRepository.repositoryName
+            value: props.ecr.nginxProductionRepository.repositoryName
           }
         }
       },
     });
-    props.storage.ecr.nginxProductionRepository.grantPullPush(buildNginxProductionImage);
-    props.storage.ecr.apiProductionRepository.grantPull(buildNginxProductionImage);
+    props.ecr.nginxProductionRepository.grantPullPush(buildNginxProductionImage);
+    props.ecr.apiProductionRepository.grantPull(buildNginxProductionImage);
 
     /* Define pipeline */
 
