@@ -9,14 +9,7 @@ export class S3Stack extends cdk.Stack {
     super(scope, id, props);
 
     this.uiBucket = new s3.Bucket(this, 'UiBucket', {
-      websiteIndexDocument: 'index.html',
-      publicReadAccess: true,
-      blockPublicAccess: {
-        blockPublicAcls: false,
-        blockPublicPolicy: false,
-        restrictPublicBuckets: false,
-        ignorePublicAcls: false
-      }
+
     })
   }
 }

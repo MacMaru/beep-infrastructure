@@ -52,7 +52,7 @@ cdk diff
 
 Deploy the changes:
 ```
-cdk deploy
+cdk deploy Beep*
 ```
 
 ## Development

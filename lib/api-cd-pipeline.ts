@@ -6,7 +6,7 @@ import codeBuild = require('@aws-cdk/aws-codebuild');
 import {EcrStack} from "./ecr-stack";
 
 export interface ApiCdPipelineProps {
-  ecr: EcrStack,
+  ecr: EcrStack
   service: ecs.FargateService
 }
 
@@ -42,8 +42,8 @@ export class ApiCdPipeline extends cdk.Construct {
       },
     });
     props.ecr.apiTestRepository.grantPullPush(buildApiTestImage);
-    props.ecr.phpDevelopmentRepository.grantPullPush(buildApiTestImage);
-    props.ecr.phpProductionRepository.grantPullPush(buildApiTestImage);
+    props.ecr.phpDevelopmentRepository.grantPull(buildApiTestImage);
+    props.ecr.phpProductionRepository.grantPull(buildApiTestImage);
 
     const buildApiProductionImage = new codeBuild.PipelineProject(this, 'BuildApiProductionImage', {
       projectName: 'beep-build-api-production-image',
@@ -70,8 +70,8 @@ export class ApiCdPipeline extends cdk.Construct {
       },
     });
     props.ecr.apiProductionRepository.grantPullPush(buildApiProductionImage);
-    props.ecr.phpDevelopmentRepository.grantPullPush(buildApiProductionImage);
-    props.ecr.phpProductionRepository.grantPullPush(buildApiProductionImage);
+    props.ecr.phpDevelopmentRepository.grantPull(buildApiProductionImage);
+    props.ecr.phpProductionRepository.grantPull(buildApiProductionImage);
 
     const buildNginxProductionImage = new codeBuild.PipelineProject(this, 'BuildNginxProductionImage', {
       projectName: 'beep-build-nginx-production-image',
@@ -102,12 +102,12 @@ export class ApiCdPipeline extends cdk.Construct {
 
     /* Define pipeline */
 
-    const apiPipeline = new codePipeline.Pipeline(this, 'ApiPipeline', {
+    const pipeline = new codePipeline.Pipeline(this, 'ApiPipeline', {
       pipelineName: 'Api',
       restartExecutionOnUpdate: true,
     });
 
-    const sourceStage = apiPipeline.addStage({
+    const sourceStage = pipeline.addStage({
       stageName: 'Source',
     });
 
@@ -139,7 +139,7 @@ export class ApiCdPipeline extends cdk.Construct {
     });
     sourceStage.addAction(nginxSourceAction);
 
-    const buildTestImageStage = apiPipeline.addStage({
+    const buildTestImageStage = pipeline.addStage({
       stageName: 'BuildTestImage',
     });
 
@@ -153,7 +153,7 @@ export class ApiCdPipeline extends cdk.Construct {
     });
     buildTestImageStage.addAction(buildApiTestImageAction);
 
-    const buildProductionImagesStage = apiPipeline.addStage({
+    const buildProductionImagesStage = pipeline.addStage({
       stageName: 'BuildProductionImages',
     });
 
@@ -182,7 +182,7 @@ export class ApiCdPipeline extends cdk.Construct {
     });
     buildProductionImagesStage.addAction(buildNginxProductionImageAction);
 
-    const deployToProduction = apiPipeline.addStage({
+    const deployToProduction = pipeline.addStage({
       stageName: 'DeployToProduction'
     });
 

@@ -1,11 +1,11 @@
 import cdk = require('@aws-cdk/core');
+import s3 = require('@aws-cdk/aws-s3');
 import codeBuild = require('@aws-cdk/aws-codebuild');
 import codePipeline = require('@aws-cdk/aws-codepipeline');
 import codePipelineActions = require('@aws-cdk/aws-codepipeline-actions');
-import {S3Stack} from "./s3-stack";
 
 export interface UiCdStackProps extends cdk.StackProps{
-  s3: S3Stack,
+  sourceBucket: s3.Bucket,
 }
 
 export class UiCdStack extends cdk.Stack {
@@ -81,7 +81,7 @@ export class UiCdStack extends cdk.Stack {
       actionName: 'DeployUiProduction',
       input: uiProductionDistribution,
       extract: true,
-      bucket: props.s3.uiBucket
+      bucket: props.sourceBucket
     })
     deployStage.addAction(uiDeployAction)
   }

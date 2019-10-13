@@ -15,7 +15,8 @@ export interface ApiStackProps extends cdk.StackProps{
 }
 
 export class ApiStack extends cdk.Stack {
-  readonly service: ecs.FargateService;
+
+  readonly service: ecs.FargateService
 
   static readonly apiSubdomain = 'api';
 
@@ -37,7 +38,7 @@ export class ApiStack extends cdk.Stack {
       clusterName: 'BeepProduction',
     });
 
-    const apiTask = new ecs.FargateTaskDefinition(this, 'ApiTask', {
+    const apiTask = new ecs.FargateTaskDefinition(this, 'Task', {
       family: 'apiTask',
       cpu: 256,
       memoryLimitMiB: 2048,
@@ -45,13 +46,13 @@ export class ApiStack extends cdk.Stack {
     props.ecr.nginxProductionRepository.grantPull(apiTask.taskRole);
     props.ecr.apiProductionRepository.grantPull(apiTask.taskRole);
 
-    const apiLogs = new logs.LogGroup(this, 'ApiLogs', {
+    const apiLogs = new logs.LogGroup(this, 'Logs', {
       logGroupName: 'Api/Production',
       retention: logs.RetentionDays.ONE_DAY,
       removalPolicy: cdk.RemovalPolicy.DESTROY
     });
 
-    const nginxContainer = apiTask.addContainer('nginx', {
+    const nginxContainer = apiTask.addContainer('Nginx', {
       image: ecs.ContainerImage.fromEcrRepository(props.ecr.nginxProductionRepository),
       essential: true,
       logging: ecs.LogDriver.awsLogs({
@@ -66,7 +67,7 @@ export class ApiStack extends cdk.Stack {
       protocol: ecs.Protocol.TCP
     });
 
-    const apiContainer = apiTask.addContainer('api', {
+    const apiContainer = apiTask.addContainer('Api', {
       image: ecs.ContainerImage.fromEcrRepository(props.ecr.apiProductionRepository),
       essential: true,
       logging: ecs.LogDriver.awsLogs({
@@ -80,7 +81,7 @@ export class ApiStack extends cdk.Stack {
       condition: ecs.ContainerDependencyCondition.START
     });
 
-    const service = new ecs.FargateService(this, 'ApiService', {
+    const service = new ecs.FargateService(this, 'Service', {
       cluster,
       vpcSubnets: {
         subnetName: 'Application'
@@ -136,16 +137,16 @@ export class ApiStack extends cdk.Stack {
       targetGroupName: 'ApiProduction',
     });
 
-    const scaling = service.autoScaleTaskCount({
-      minCapacity: 1,
-      maxCapacity: 2
-    });
-    scaling.scaleOnRequestCount('Scaling', {
-      targetGroup: targetGroup,
-      requestsPerTarget: 100,
-      scaleInCooldown: cdk.Duration.seconds(60),
-      scaleOutCooldown: cdk.Duration.seconds(60)
-    });
+    // const scaling = service.autoScaleTaskCount({
+    //   minCapacity: 1,
+    //   maxCapacity: 2
+    // });
+    // scaling.scaleOnRequestCount('Scaling', {
+    //   targetGroup: targetGroup,
+    //   requestsPerTarget: 100,
+    //   scaleInCooldown: cdk.Duration.seconds(60),
+    //   scaleOutCooldown: cdk.Duration.seconds(60)
+    // });
 
     // We need to insert a redirect action here later, but CDK does not support this yet due to a bug:
     // https://github.com/aws/aws-cdk/issues/2563
