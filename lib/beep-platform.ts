@@ -2,8 +2,6 @@ import cdk = require('@aws-cdk/core');
 import {VpcStack} from "./vpc-stack";
 import {EcrStack} from "./ecr-stack";
 import {RdsStack} from "./rds-stack";
-import {S3Stack} from "./s3-stack";
-import {CognitoStack} from "./cognito-stack";
 import {ApiStack} from "./api-stack";
 import {ApiCdStack} from "./api-cd-stack";
 import {UiCdStack} from "./ui-cd-stack";
@@ -26,19 +24,11 @@ export class BeepPlatform extends cdk.Construct {
       env: props.env
     })
 
-    const s3Stack = new S3Stack(this, 'S3', {
-      env: props.env
-    })
-
     const rdsStack = new RdsStack(this, 'Rds', {
       env: props.env,
       vpc: vpcStack.vpc
     })
     rdsStack.addDependency(vpcStack)
-
-    const cognitoStack = new CognitoStack(this, 'Cognito', {
-      env: props.env
-    })
 
     const apiStack = new ApiStack(this, 'Api', {
       env: props.env,
@@ -57,12 +47,14 @@ export class BeepPlatform extends cdk.Construct {
     apiCdStack.addDependency(apiStack)
 
     const uiStack = new UiStack(this, 'Ui', {
-      env: props.env
+      env: props.env,
+      rootDomain: props.domainName
     })
 
     const uiCdStack = new UiCdStack(this, 'UiCd', {
       env: props.env,
-      sourceBucket: uiStack.sourceBucket
+      sourceBucket: uiStack.sourceBucket,
+      distribution: uiStack.distribution
     })
   }
 }

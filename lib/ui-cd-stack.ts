@@ -1,11 +1,16 @@
 import cdk = require('@aws-cdk/core');
 import s3 = require('@aws-cdk/aws-s3');
+import iam = require('@aws-cdk/aws-iam');
 import codeBuild = require('@aws-cdk/aws-codebuild');
 import codePipeline = require('@aws-cdk/aws-codepipeline');
 import codePipelineActions = require('@aws-cdk/aws-codepipeline-actions');
+import cloudfront = require('@aws-cdk/aws-cloudfront');
+import lambda = require('@aws-cdk/aws-lambda');
+import path = require('path');
 
 export interface UiCdStackProps extends cdk.StackProps{
   sourceBucket: s3.Bucket,
+  distribution: cloudfront.CloudFrontWebDistribution,
 }
 
 export class UiCdStack extends cdk.Stack {
@@ -37,6 +42,8 @@ export class UiCdStack extends cdk.Stack {
       pipelineName: 'Ui',
       restartExecutionOnUpdate: true,
     });
+
+
 
     const sourceStage = uiPipeline.addStage({
       stageName: 'Source',
@@ -81,8 +88,31 @@ export class UiCdStack extends cdk.Stack {
       actionName: 'DeployUiProduction',
       input: uiProductionDistribution,
       extract: true,
-      bucket: props.sourceBucket
+      bucket: props.sourceBucket,
+      runOrder: 1
     })
     deployStage.addAction(uiDeployAction)
+
+    const invalidationLambda = new lambda.Function(this, 'InvalidateDistribution', {
+      runtime: lambda.Runtime.NODEJS_10_X,
+      handler: 'invalidate-distribution.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, 'lambda/invalidate-ui-distribution'))
+    });
+
+    const distributionArn = 'arn:aws:cloudfront::038855593698:distribution/' + props.distribution.distributionId;
+    const invalidationPolicy = new iam.PolicyStatement();
+    invalidationPolicy.addResources(distributionArn);
+    invalidationPolicy.addActions('cloudfront:CreateInvalidation');
+    invalidationLambda.addToRolePolicy(invalidationPolicy);
+
+    const invalidateDistribution = new codePipelineActions.LambdaInvokeAction({
+      actionName: 'InvalidateDistribution',
+      runOrder: 2,
+      lambda: invalidationLambda,
+      userParameters: {
+        'distributionId': props.distribution.distributionId
+      }
+    })
+    deployStage.addAction(invalidateDistribution);
   }
 }

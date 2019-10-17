@@ -42,6 +42,7 @@ export class ApiStack extends cdk.Stack {
       family: 'apiTask',
       cpu: 256,
       memoryLimitMiB: 2048,
+
     });
     props.ecr.nginxProductionRepository.grantPull(apiTask.taskRole);
     props.ecr.apiProductionRepository.grantPull(apiTask.taskRole);
