@@ -8,6 +8,7 @@ import {BastionAcl} from "./bastion-acl";
 
 export class VpcStack extends cdk.Stack {
   readonly vpc: ec2.Vpc
+  readonly bastion: ec2.BastionHostLinux
 
   constructor(scope: cdk.Construct, id: string, props: cdk.StackProps) {
     super(scope, id, props);
@@ -80,7 +81,7 @@ export class VpcStack extends cdk.Stack {
       })
     });
 
-    new BastionHostLinux(this, 'Bastion', {
+    this.bastion = new BastionHostLinux(this, 'Bastion', {
       vpc: this.vpc,
       subnetSelection: {
         subnetGroupName: 'Bastion',

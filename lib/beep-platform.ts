@@ -26,7 +26,7 @@ export class BeepPlatform extends cdk.Construct {
 
     const rdsStack = new RdsStack(this, 'Rds', {
       env: props.env,
-      vpc: vpcStack.vpc
+      vpc: vpcStack
     })
     rdsStack.addDependency(vpcStack)
 
@@ -52,7 +52,7 @@ export class BeepPlatform extends cdk.Construct {
       rootDomain: props.domainName
     })
 
-    const uiCdStack = new UiCdStack(this, 'UiCd', {
+    new UiCdStack(this, 'UiCd', {
       env: props.env,
       sourceBucket: uiStack.sourceBucket,
       distribution: uiStack.distribution

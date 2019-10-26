@@ -2,6 +2,7 @@ import cdk = require('@aws-cdk/core');
 import ec2 = require('@aws-cdk/aws-ec2');
 import ecs = require('@aws-cdk/aws-ecs');
 import logs = require('@aws-cdk/aws-logs');
+import ssm = require('@aws-cdk/aws-ssm');
 import elb = require('@aws-cdk/aws-elasticloadbalancingv2');
 import route53 = require('@aws-cdk/aws-route53');
 import route53Targets = require('@aws-cdk/aws-route53-targets');
@@ -55,16 +56,17 @@ export class ApiStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY
     });
 
+    const cognitoJwks = ssm.StringParameter.fromStringParameterAttributes(this, 'JsonWebKeySet', {
+      parameterName: '/Beep/Production/CognitoJwks',
+    }).stringValue;
+
     const nginxContainer = apiTask.addContainer('Nginx', {
       image: ecs.ContainerImage.fromEcrRepository(props.ecr.nginxProductionRepository),
       essential: true,
       logging: ecs.LogDriver.awsLogs({
         logGroup: apiLogs,
         streamPrefix: 'nginx',
-      }),
-      secrets: {
-        DATABASE_CREDENTIALS: ecs.Secret.fromSecretsManager(props.rds.apiDatabaseMasterCredentials)
-      }
+      })
     });
 
     nginxContainer.addPortMappings({
@@ -79,7 +81,13 @@ export class ApiStack extends cdk.Stack {
       logging: ecs.LogDriver.awsLogs({
         logGroup: apiLogs,
         streamPrefix: 'php',
-      })
+      }),
+      secrets: {
+        DATABASE_CREDENTIALS: ecs.Secret.fromSecretsManager(props.rds.apiDatabaseMasterCredentials)
+      },
+      environment: {
+        COGNITO_JWKS: cognitoJwks
+      }
     });
 
     nginxContainer.addContainerDependencies({
@@ -102,6 +110,36 @@ export class ApiStack extends cdk.Stack {
       platformVersion: ecs.FargatePlatformVersion.LATEST,
     });
     this.service = service;
+
+    service.connections.allowTo(props.rds.apiDatabase, ec2.Port.tcp(3306), 'Connection to Aurora');
+
+    const dbMigrationTask = new ecs.FargateTaskDefinition(this, 'DbMigrationTask', {
+      family: 'dbMigrationTask',
+      cpu: 1024,
+      memoryLimitMiB: 4096,
+    });
+
+    const dbMigrationLogs = new logs.LogGroup(this, 'DbMigrationLogs', {
+      logGroupName: 'Api/Production/DbMigration',
+      retention: logs.RetentionDays.ONE_DAY,
+      removalPolicy: cdk.RemovalPolicy.DESTROY
+    });
+
+    dbMigrationTask.addContainer('Php', {
+      image: ecs.ContainerImage.fromEcrRepository(props.ecr.apiProductionRepository),
+      essential: true,
+      logging: ecs.LogDriver.awsLogs({
+        logGroup: dbMigrationLogs,
+        streamPrefix: 'php',
+      }),
+      secrets: {
+        DATABASE_CREDENTIALS: ecs.Secret.fromSecretsManager(props.rds.apiDatabaseMasterCredentials)
+      },
+      environment: {
+        COGNITO_JWKS: cognitoJwks
+      },
+      entryPoint: ["php", "bin/console", "doctrine:migrations:migrate", "--no-interaction"]
+    });
 
     const loadBalancer = new elb.ApplicationLoadBalancer(this, 'LoadBalancer', {
       vpc: props.vpc,

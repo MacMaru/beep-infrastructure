@@ -3,9 +3,10 @@ import rds = require('@aws-cdk/aws-rds');
 import ec2 = require('@aws-cdk/aws-ec2');
 import secretsManager = require('@aws-cdk/aws-secretsmanager');
 import ssm = require('@aws-cdk/aws-ssm');
+import {VpcStack} from "./vpc-stack";
 
 export interface RdsStackProperties extends cdk.StackProps{
-  vpc: ec2.Vpc
+  vpc: VpcStack
 }
 
 export class RdsStack extends cdk.Stack {
@@ -31,7 +32,7 @@ export class RdsStack extends cdk.Stack {
     // Performance insights and encrypted storage are not supported for this instance.
     // Activate these when upgrading DB.
     const database = new rds.DatabaseInstance(this, 'Database', {
-      vpc: props.vpc,
+      vpc: props.vpc.vpc,
       vpcPlacement: {
         subnetName: 'Database'
       },
@@ -56,6 +57,9 @@ export class RdsStack extends cdk.Stack {
       deletionProtection: false,
     });
     this.apiDatabase = database;
+
+    this.apiDatabase.connections.allowFrom(props.vpc.bastion, ec2.Port.tcp(3306), 'Connection to Aurora')
+
 
     const databaseEndpoint = new ssm.StringParameter(this, 'DatabaseEndpoint', {
       parameterName: '/Beep/Production/DbEndpoint',
