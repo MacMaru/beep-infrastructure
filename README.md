@@ -76,3 +76,22 @@ Name the command after the CDK command you want to debug e.g. `cdk diff`.
 If you are using a specific profile, do not forget to add the `--profile` argument with the profile name.
 
 Set a breakpoint and click debug next to the run configuration in the top right.
+
+## Connecting to the database (RDS)
+
+1. Install the [Session Manager Plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html) Plugin for AWS CLI
+2. Log into the bastion instance: `aws ssm start-session --target i-096eca4a81f445b75`
+3. Assume the `ec2-user`: 
+    ```
+    $ sudo -i
+    # su ec2-user
+    ```
+4. Add your own public key to the authorized_keys file of the ec2-user
+5. Add the following to your ssh config
+    ```
+    Host i-* mi-*
+      ProxyCommand sh -c "PATH=$PATH:/usr/local/bin /usr/local/bin/aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p'"
+    ```
+    **Note** If you are using a different profile in aws, make sure to include the --profile <PROFILE> argument 
+    
+The `PATH=$PATH:/usr/local/bin` in front of the command is necessary if you use Sequel Pro (Mac). For some reason it doesn't respect the user paths and fails to find aws cli and session plugin 
