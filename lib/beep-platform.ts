@@ -35,6 +35,7 @@ export class BeepPlatform extends cdk.Construct {
       vpc: vpcStack.vpc,
       ecr: ecrStack,
       domainName: props.domainName,
+      rds: rdsStack
     });
     apiStack.addDependency(vpcStack)
     apiStack.addDependency(ecrStack)

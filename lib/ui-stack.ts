@@ -103,6 +103,7 @@ export class UiStack extends cdk.Stack {
   createDevelopmentPoolAndClient() {
     const userPool = this.createUserPool('BeepDevelopment');
     this.createClient(userPool, 'BeepUiDevelopment', UiStack.developmentBaseUrl);
+    
   }
 
   createUserPool(name: string) {

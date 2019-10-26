@@ -3,6 +3,8 @@ import ec2 = require('@aws-cdk/aws-ec2');
 import {EgressAcl} from "./egress-acl";
 import {IngressAcl} from "./ingress-acl";
 import {ApplicationAcl} from "./application-acl";
+import {BastionHostLinux} from "@aws-cdk/aws-ec2";
+import {BastionAcl} from "./bastion-acl";
 
 export class VpcStack extends cdk.Stack {
   readonly vpc: ec2.Vpc
@@ -42,7 +44,6 @@ export class VpcStack extends cdk.Stack {
           name: 'Bastion',
           cidrMask: 24,
           subnetType: ec2.SubnetType.PRIVATE,
-          reserved: true
         }
       ],
       natGateways: 1,
@@ -71,5 +72,19 @@ export class VpcStack extends cdk.Stack {
         subnetName: 'Application'
       })
     });
+
+    new BastionAcl(this, 'BastionAcl', {
+      vpc: this.vpc,
+      subnetSelection: this.vpc.selectSubnets({
+        subnetName: 'Bastion'
+      })
+    });
+
+    new BastionHostLinux(this, 'Bastion', {
+      vpc: this.vpc,
+      subnetSelection: {
+        subnetGroupName: 'Bastion',
+      },
+    })
   }
 }

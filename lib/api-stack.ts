@@ -7,11 +7,13 @@ import route53 = require('@aws-cdk/aws-route53');
 import route53Targets = require('@aws-cdk/aws-route53-targets');
 import certificateManager = require('@aws-cdk/aws-certificatemanager');
 import {EcrStack} from "./ecr-stack";
+import {RdsStack} from "./rds-stack";
 
 export interface ApiStackProps extends cdk.StackProps{
   vpc: ec2.Vpc,
   ecr: EcrStack,
-  domainName: string
+  domainName: string,
+  rds: RdsStack
 }
 
 export class ApiStack extends cdk.Stack {
@@ -60,6 +62,9 @@ export class ApiStack extends cdk.Stack {
         logGroup: apiLogs,
         streamPrefix: 'nginx',
       }),
+      secrets: {
+        DATABASE_CREDENTIALS: ecs.Secret.fromSecretsManager(props.rds.apiDatabaseMasterCredentials)
+      }
     });
 
     nginxContainer.addPortMappings({
@@ -137,6 +142,7 @@ export class ApiStack extends cdk.Stack {
       deregistrationDelay: cdk.Duration.seconds(60),
       targetGroupName: 'ApiProduction',
     });
+
 
     // const scaling = service.autoScaleTaskCount({
     //   minCapacity: 1,
